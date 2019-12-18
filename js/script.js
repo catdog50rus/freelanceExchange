@@ -38,23 +38,38 @@ document.addEventListener('DOMContentLoaded', () => {
 
   formCustomer.addEventListener('submit', (event) => {
     event.preventDefault();
+    
     const obj = {};
-    for (const elem of formCustomer.elements){
+    /* for (const elem of formCustomer.elements){
+      
       if((elem.tagName === 'INPUT' && elem.type !== 'radio') ||
         (elem.type === 'radio' && elem.checked) ||
         elem.tagName === 'TEXTAREA') {
         
         obj[elem.name] = elem.value;
         
-        if(elem.type !== 'radio'){
-          elem.value = '';
-        }
+         
       }
-      
+    }; */
 
-    };
+    const elements = [...formCustomer.elements]
+      .filter(elem => 
+        ((elem.tagName === 'INPUT' && elem.type !== 'radio') ||
+        (elem.type === 'radio' && elem.checked) ||
+        elem.tagName === 'TEXTAREA'));
+    
+    elements.forEach((item) => {
+      obj[item.name] = item.value;
+    });
+    
+    formCustomer.reset();
+    
     orders.push(obj);
-    console.log('orders: ', orders);
+
+    console.log('orders: ', orders); 
+
+    
+
   });
 
 
