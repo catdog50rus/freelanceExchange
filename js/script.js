@@ -11,24 +11,94 @@ document.addEventListener('DOMContentLoaded', () => {
         modalOrder = document.getElementById('order_read'),
         modalOrderActive = document.getElementById('order_active');
   
-  const orders = [];
+  const orders = JSON.parse(localStorage.getItem('freeOrders')) || [];
 
+  const toStorage = () => {
+    localStorage.setItem('freeOrders', JSON.stringify(orders));
+  };
+
+  const calcDeadline = (deadline) => {
+  //const days = '10 дней';
+    const nowDate = new Date();
+    
+    const date = new Date(deadline);
+    
+    console.log('date: ', date);
+    
+    console.log('nowDate: ', nowDate);
+
+    const days = Math.round((date - nowDate)/(1000*3600*24));
+    //console.log('day: ', day);
+
+
+    return days;
+  };
+
+  
+
+  //рендер таблицы заказов
   const renderOrders = () => {
     ordersTable.textContent = '';
     
     orders.forEach((order, i) => {
-           
+      // если заказ в работе, присваиваем класс "taken" и заказ отмечается зеленым
       ordersTable.innerHTML += `
-      <tr class="order" data-number-order="${i}">
+      <tr class="order ${order.active ? 'taken': ''}"
+        data-number-order="${i}"> 
         <td>${i+1}</td> 
         <td>${order.description}</td> 
         <td class="${order.currency}"></td> 
-        <td>${order.deadline}</td> 
+        <td>${calcDeadline(order.deadline)}</td> 
       </tr>`;
 
     });
     
   };
+
+  //обработка события при нажатии на модальное окно
+  const handlerModal = (event) => {
+    const target = event.target;
+    const modal = target.closest('.order-modal');
+    const order = orders[modal.numberOrder];
+
+    //закрытие модального окна
+    if(target.closest('.close') || target === modal){
+      modal.style.display = 'none';
+    };
+
+    // основное действие с модальным окном
+    /*Закрытие окна, 
+      запись в локал сторедж
+      рендер таблицы*/
+    const baseAction = () => {
+      modal.style.display = 'none';
+      toStorage();
+      renderOrders();
+    };
+
+    //взятие заказа
+    if (target.closest('.get-order')) {
+      order.active = true;
+      baseAction();
+      
+    }
+
+    //отказ от заказа
+    if (target.closest('#capitulation')) {
+      order.active = false;
+      baseAction();
+    }
+
+    //выполнение заказа
+    if (target.closest('#ready')) {
+      orders.splice(orders.indexOf(order), 1);
+      baseAction();
+    }
+
+
+
+    console.log(target);
+  }
 
   const openModal = (numberOrder) => {
     const order = orders[numberOrder];
@@ -37,8 +107,7 @@ document.addEventListener('DOMContentLoaded', () => {
           amount, phone, active } = order;
     
     const modal = active ? modalOrderActive : modalOrder;
-    const formClose = modal.querySelector('.close');
-    
+      
     const 
           titleBock = modal.querySelector('.modal-title'),
           firstNameBlock = modal.querySelector('.firstName'),
@@ -49,25 +118,23 @@ document.addEventListener('DOMContentLoaded', () => {
           countBlock = modal.querySelector('.count'),
           phoneBlock = modal.querySelector('.phone');
           
-    
+    modal.numberOrder = numberOrder;
     titleBock.textContent = title;
     firstNameBlock.textContent = firstName;
     emailBlock.textContent = email;
     emailBlock.href = 'mailto:' + email;
     descriptionBlock.textContent = description;
-    deadlineBlock.textContent = deadline;
+    deadlineBlock.textContent = calcDeadline(deadline);
     currencyBlock.className = 'currency_img';
     currencyBlock.classList.add(currency);
     countBlock.textContent = amount;
     phoneBlock ? phoneBlock.href = 'tel:' + phone : '';
     
-    modal.style.display = 'block';
+    modal.style.display = 'flex';
 
-    formClose.addEventListener('click', () => {
-        modal.style.display = 'none';
-        
-    });
+    modal.addEventListener('click', handlerModal);
 
+    
   };
 
   
@@ -148,7 +215,7 @@ document.addEventListener('DOMContentLoaded', () => {
     
     orders.push(obj);
 
-    console.log('orders: ', orders); 
+    toStorage();
 
     
 
