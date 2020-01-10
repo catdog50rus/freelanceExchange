@@ -9,7 +9,8 @@ document.addEventListener('DOMContentLoaded', () => {
         formCustomer = document.getElementById('form-customer'),
         ordersTable = document.getElementById('orders'),
         modalOrder = document.getElementById('order_read'),
-        modalOrderActive = document.getElementById('order_active');
+        modalOrderActive = document.getElementById('order_active'),
+        headTable = document.getElementById('headTable');
   
   const orders = JSON.parse(localStorage.getItem('freeOrders')) || [];
 
@@ -17,22 +18,21 @@ document.addEventListener('DOMContentLoaded', () => {
     localStorage.setItem('freeOrders', JSON.stringify(orders));
   };
 
+  // расчет количества дней до сдачи проекта
   const calcDeadline = (deadline) => {
-  //const days = '10 дней';
     const nowDate = new Date();
-    
     const date = new Date(deadline);
-    
-    console.log('date: ', date);
-    
-    console.log('nowDate: ', nowDate);
-
-    const days = Math.round((date - nowDate)/(1000*3600*24));
-    //console.log('day: ', day);
-
-
-    return days;
+    const remain = (date - nowDate)/(1000*3600);
+    if (remain / 24 > 2){
+      return declOfNum(Math.floor(remain / 24), ['день', 'дня', 'дней']);
+    }
+    return declOfNum(Math.floor(remain), ['час', 'часа', 'часов']);
   };
+
+  // функция склонения чисел
+  const declOfNum = (number, titles) => number + ' ' +
+     titles[(number % 100 > 4 && number % 100 < 20) ?
+     2 : [2, 0, 1, 1, 1, 2][(number % 10 < 5) ? number % 10 : 5]];
 
   
 
@@ -95,9 +95,6 @@ document.addEventListener('DOMContentLoaded', () => {
       baseAction();
     }
 
-
-
-    console.log(target);
   }
 
   const openModal = (numberOrder) => {
@@ -137,7 +134,31 @@ document.addEventListener('DOMContentLoaded', () => {
     
   };
 
-  
+  headTable.addEventListener('click', (event) => {
+    const target = event.target;
+    const targetSort = target.classList.contains('head-sort');
+    if (targetSort){
+      if (target.id === 'taskSort') {
+        sortOrder(orders, 'title');
+      }
+
+      if (target.id === 'currencySort') {
+        sortOrder(orders, 'currency');
+      }
+
+      if (target.id === 'deadlineSort') {
+        sortOrder(orders, 'deadline');
+      }
+    };
+    toStorage();
+    renderOrders();
+
+
+  });
+
+  const sortOrder = (arr, property) => {
+    arr.sort((a, b) => a[property] > b[property] ? 1 : -1)
+  }
 
   ordersTable.addEventListener('click', (event) => {
     const target = event.target;
@@ -157,6 +178,10 @@ document.addEventListener('DOMContentLoaded', () => {
   customer.addEventListener('click', () => {
     blockFreelancer.style.display = 'none';
     blockChoice.style.display = 'none';
+    //установка минимальной даты выполнения заказа(не меньше текущей)
+    const toDay = new Date().toISOString().substring(0, 10);
+    document.getElementById('deadline').min = toDay;
+
     blockCustomer.style.display = 'block';
     btnExit.style.display = 'block';
     
@@ -185,20 +210,7 @@ document.addEventListener('DOMContentLoaded', () => {
     event.preventDefault();
     
     const obj = {};
-    /* 
-    //вариант фильтрации с циклом "for of"
-    for (const elem of formCustomer.elements){
-      
-      if((elem.tagName === 'INPUT' && elem.type !== 'radio') ||
-        (elem.type === 'radio' && elem.checked) ||
-        elem.tagName === 'TEXTAREA') {
-        
-        obj[elem.name] = elem.value;
-        
-         
-      }
-    }; */
-
+   
     //вариант фильтрации методом "filter()" и перебором массива 
     const elements = [...formCustomer.elements]
       .filter(elem => (
@@ -214,6 +226,7 @@ document.addEventListener('DOMContentLoaded', () => {
     formCustomer.reset();
     
     orders.push(obj);
+        
 
     toStorage();
 
